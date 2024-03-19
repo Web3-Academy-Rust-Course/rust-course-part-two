@@ -3,6 +3,12 @@
 pub use codec::{Decode, Encode};
 pub use pallet::*;
 
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
 #[derive(Encode, Decode, Default, PartialEq, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct AddressInfo<Balance, BlockNumber> {
@@ -162,6 +168,9 @@ pub mod pallet {
 
 			// Check if the deposited amount is greater than 0
 			ensure!(amount > <BalanceOf<T>>::zero(), Error::<T>::InvalidDepositAmount);
+
+			// Check if user has enough funds
+			ensure!(T::Currency::free_balance(&user) >= amount, Error::<T>::InsufficientBalance);
 
 			// Get address info of extrinsic caller
 			let mut address_info = Accounts::<T>::get(&user);
