@@ -274,6 +274,7 @@ parameter_types! {
 
 // Configure the custom pallet (pallet-defi)
 impl pallet_defi::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
 	type NumberOfBlocksYearly = NumberOfBlocksYearly;
 }
