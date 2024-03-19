@@ -265,6 +265,17 @@ impl pallet_sudo::Config for Runtime {
 	type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
+// Nicks pallet configuration
+impl pallet_nicks::Config for Runtime {
+	type Currency = Balances;
+	type ReservationFee = ConstU128<100>;
+	type Slashed = ();
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type MinLength = ConstU32<8>;
+	type MaxLength = ConstU32<32>;
+	type RuntimeEvent = RuntimeEvent;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime {
@@ -275,6 +286,7 @@ construct_runtime!(
 		Balances: pallet_balances,
 		TransactionPayment: pallet_transaction_payment,
 		Sudo: pallet_sudo,
+		Nicks: pallet_nicks,
 	}
 );
 
