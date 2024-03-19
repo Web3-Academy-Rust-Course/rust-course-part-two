@@ -46,6 +46,9 @@ use pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter, Multiplier
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
+// Import the custom pallet (pallet_defi)
+pub use pallet_defi;
+
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -226,7 +229,7 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 /// Existential deposit.
-pub const EXISTENTIAL_DEPOSIT: u128 = 500;
+pub const EXISTENTIAL_DEPOSIT: u128 = 1;
 
 impl pallet_balances::Config for Runtime {
 	type MaxLocks = ConstU32<50>;
@@ -265,6 +268,16 @@ impl pallet_sudo::Config for Runtime {
 	type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+	pub const NumberOfBlocksYearly: u32 = 5256000;
+}
+
+// Configure the custom pallet (pallet-defi)
+impl pallet_defi::Config for Runtime {
+	type Currency = Balances;
+	type NumberOfBlocksYearly = NumberOfBlocksYearly;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime {
@@ -275,6 +288,7 @@ construct_runtime!(
 		Balances: pallet_balances,
 		TransactionPayment: pallet_transaction_payment,
 		Sudo: pallet_sudo,
+		Defi: pallet_defi,
 	}
 );
 

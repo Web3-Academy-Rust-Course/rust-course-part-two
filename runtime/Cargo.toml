@@ -43,6 +43,9 @@ sp-version = { version = "22.0.0", default-features = false, git = "https://gith
 frame-system-rpc-runtime-api = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 
+# Import custom pallet (pallet-defi)
+pallet-defi = { version = "1.0.0", default-features = false, path = "../pallets/defi" }
+
 # Used for runtime benchmarking
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", optional = true , branch = "polkadot-v1.0.0" }
 frame-system-benchmarking = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", optional = true , branch = "polkadot-v1.0.0" }
@@ -83,6 +86,8 @@ std = [
 	"sp-transaction-pool/std",
 	"sp-version/std",
 	"substrate-wasm-builder",
+	# Add custom pallet (defi)
+	"pallet-defi/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
