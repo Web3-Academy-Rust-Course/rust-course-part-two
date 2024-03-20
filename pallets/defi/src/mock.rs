@@ -3,12 +3,13 @@ use codec::Decode;
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{Everything, Hooks},
+	PalletId,
 };
 use frame_system;
 use hex_literal::hex;
 use sp_core::H256;
 use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
 	BuildStorage, FixedU128,
 };
 
@@ -31,8 +32,12 @@ pub const CHARLIE: AccountId = 3;
 
 // Define helper function
 pub fn get_authority_account() -> AccountId {
-	let bytes = hex!("96ea3c9c0be7bbc7b0656a1983db5eed75210256891a9609012362e36815b132");
+	let bytes = hex!("fed77d0df3f5068d8a875e5ae7c3248ba7c602439623cab507206af8e50edd4b");
 	AccountId::decode(&mut &bytes[..]).unwrap()
+}
+
+pub fn pallet_id() -> AccountId {
+	PalletId(*b"defipllt").into_account_truncating()
 }
 
 pub fn get_default_deposit_rate() -> FixedU128 {
