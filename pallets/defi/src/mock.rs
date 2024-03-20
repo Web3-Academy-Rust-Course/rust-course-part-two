@@ -119,6 +119,7 @@ impl pallet_defi::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
 	type NumberOfBlocksYearly = NumberOfBlocksYearly;
+	type WeightInfo = ();
 }
 
 pub struct ExtBuilder {

@@ -277,6 +277,7 @@ impl pallet_defi::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
 	type NumberOfBlocksYearly = NumberOfBlocksYearly;
+	type WeightInfo = pallet_defi::weights::SubstrateWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -337,6 +338,7 @@ mod benches {
 		[pallet_balances, Balances]
 		[pallet_timestamp, Timestamp]
 		[pallet_sudo, Sudo]
+		[pallet_defi, Defi]
 	);
 }
 

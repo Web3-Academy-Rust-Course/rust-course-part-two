@@ -9,6 +9,11 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+mod benchmarking;
+
+pub mod weights;
+pub use weights::WeightInfo;
+
 #[derive(Encode, Decode, Default, PartialEq, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct AddressInfo<Balance, BlockNumber> {
@@ -25,6 +30,7 @@ pub struct AddressInfo<Balance, BlockNumber> {
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
 	use super::*;
+	use crate::WeightInfo;
 	use frame_support::{
 		pallet_prelude::*,
 		sp_runtime::{
@@ -50,6 +56,9 @@ pub mod pallet {
 
 		/// Number of blocks on yearly basis
 		type NumberOfBlocksYearly: Get<u32>;
+
+		/// Extrinsics weight Info
+		type WeightInfo: WeightInfo;
 	}
 
 	type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
@@ -160,7 +169,7 @@ pub mod pallet {
 		/// Deposit funds
 		#[transactional]
 		#[pallet::call_index(0)]
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as Config>::WeightInfo::deposit())]
 		pub fn deposit(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			// This function will return an error if the extrinsic is not signed.
@@ -209,7 +218,7 @@ pub mod pallet {
 		/// Withdraw funds
 		#[transactional]
 		#[pallet::call_index(1)]
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as Config>::WeightInfo::withdraw())]
 		pub fn withdraw(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			// This function will return an error if the extrinsic is not signed.
@@ -272,7 +281,7 @@ pub mod pallet {
 		/// Borrow funds
 		#[transactional]
 		#[pallet::call_index(2)]
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as Config>::WeightInfo::borrow())]
 		pub fn borrow(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			// This function will return an error if the extrinsic is not signed.
@@ -327,7 +336,7 @@ pub mod pallet {
 		/// Repay loan
 		#[transactional]
 		#[pallet::call_index(3)]
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as Config>::WeightInfo::repay())]
 		pub fn repay(origin: OriginFor<T>, mut amount: BalanceOf<T>) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			// This function will return an error if the extrinsic is not signed.
@@ -385,7 +394,7 @@ pub mod pallet {
 
 		/// Update deposit rate
 		#[pallet::call_index(4)]
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as Config>::WeightInfo::update_deposit_rate())]
 		pub fn update_deposit_rate(origin: OriginFor<T>, new_rate: FixedU128) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			// This function will return an error if the extrinsic is not signed.
@@ -405,7 +414,7 @@ pub mod pallet {
 
 		/// Update borrowing rate
 		#[pallet::call_index(5)]
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as Config>::WeightInfo::update_borrowing_rate())]
 		pub fn update_borrowing_rate(origin: OriginFor<T>, new_rate: FixedU128) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			// This function will return an error if the extrinsic is not signed.
@@ -425,7 +434,7 @@ pub mod pallet {
 
 		/// Update collateral factor
 		#[pallet::call_index(6)]
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as Config>::WeightInfo::update_collateral_factor())]
 		pub fn update_collateral_factor(
 			origin: OriginFor<T>,
 			new_factor: FixedU128,
