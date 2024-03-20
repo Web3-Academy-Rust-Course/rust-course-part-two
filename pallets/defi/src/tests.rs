@@ -665,7 +665,7 @@ mod tests {
 	}
 
 	#[test]
-	fn check_liquidity_ok() {
+	fn check_liquidate_user_position_ok() {
 		let mut ext = ExtBuilder::default().build();
 		ext.execute_with(|| {
 			// Start test from block 1
@@ -684,7 +684,16 @@ mod tests {
 			// Run blockchain to block 100
 			run_to_block(100);
 
-			// Check if ALICE position was liquidateds
+			// Check if ALICE position before liquidation
+			let alice_info = pallet::Accounts::<Runtime>::get(ALICE);
+			assert_eq!(alice_info.deposit_principal, balance!(10));
+			assert_eq!(alice_info.deposit_date, 1);
+			assert_eq!(alice_info.borrow_principal, balance!(5));
+			assert_eq!(alice_info.borrow_date, 1);
+
+			assert_ok!(Defi::liquidate_user_position(RuntimeOrigin::signed(BOB), ALICE));
+
+			// Check if ALICE position after liquidation
 			let alice_info = pallet::Accounts::<Runtime>::get(ALICE);
 			assert_eq!(alice_info.deposit_principal, balance!(0));
 			assert_eq!(alice_info.deposit_date, 0);

@@ -68,12 +68,12 @@ benchmarks! {
 		let user = alice::<T>();
 		let deposit_amount = 10u32;
 		let withdraw_amount = 5u32;
-	} : {
+
 		Defi::<T>::deposit(
 			RawOrigin::Signed(user.clone()).into(),
 			deposit_amount.into(),
 		).unwrap();
-
+	} : {
 		let _ =Defi::<T>::withdraw(
 			RawOrigin::Signed(user.clone()).into(),
 			withdraw_amount.into(),
@@ -90,7 +90,7 @@ benchmarks! {
 		let borrowing_amount: u32 = 5;
 		let depositing_amount_1: u32 = 10;
 		let depositing_amount_2: u32 = 100;
-	} : {
+
 		Defi::<T>::deposit(
 			RawOrigin::Signed(depositing_user.clone()).into(),
 			depositing_amount_2.into(),
@@ -100,7 +100,7 @@ benchmarks! {
 			RawOrigin::Signed(borrowing_user.clone()).into(),
 			depositing_amount_1.into(),
 		).unwrap();
-
+	} : {
 		let _ = Defi::<T>::borrow(
 			RawOrigin::Signed(borrowing_user.clone()).into(),
 			borrowing_amount.into(),
@@ -115,7 +115,7 @@ benchmarks! {
 		let user = alice::<T>();
 		let borrowing_amount: u32 = 5;
 		let depositing_amount: u32 = 10;
-	} : {
+
 		run_to_block::<T>(1);
 
 		Defi::<T>::deposit(
@@ -129,7 +129,7 @@ benchmarks! {
 		).unwrap();
 
 		run_to_block::<T>(11);
-
+	} : {
 		let _ = Defi::<T>::repay(
 			RawOrigin::Signed(user.clone()).into(),
 			borrowing_amount.into(),
@@ -174,6 +174,47 @@ benchmarks! {
 		);
 	} verify {
 		assert_last_event::<T>(Event::<T>::CollateralFactorUpdated(new_factor).into());
+	}
+
+	liquidate_user_position {
+		let alice = alice::<T>();
+		let bob = bob::<T>();
+		let authority = authority::<T>();
+		let borrowing_amount: u32 = 5;
+		let depositing_amount_1: u32 = 10;
+		let depositing_amount_2: u32 = 100;
+		let new_borrowing_rate: u128 = 1000000000000000000;
+
+		run_to_block::<T>(1);
+
+		Defi::<T>::deposit(
+			RawOrigin::Signed(bob.clone()).into(),
+			depositing_amount_2.into(),
+		).unwrap();
+
+		Defi::<T>::deposit(
+			RawOrigin::Signed(alice.clone()).into(),
+			depositing_amount_1.into(),
+		).unwrap();
+
+		Defi::<T>::borrow(
+			RawOrigin::Signed(alice.clone()).into(),
+			borrowing_amount.into(),
+		).unwrap();
+
+		Defi::<T>::update_borrowing_rate(
+			RawOrigin::Signed(authority).into(),
+			FixedU128::from_inner(new_borrowing_rate)
+		).unwrap();
+
+		run_to_block::<T>(100);
+	} : {
+		let _ = Defi::<T>::liquidate_user_position(
+			RawOrigin::Signed(bob).into(),
+			alice.clone(),
+		);
+	} verify {
+		assert_last_event::<T>(Event::<T>::AddressLiquidated(alice).into());
 	}
 
 	impl_benchmark_test_suite!(

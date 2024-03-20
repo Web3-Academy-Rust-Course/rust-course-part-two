@@ -15,7 +15,9 @@ use sp_runtime::{
 	traits::{
 		AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, One, Verify,
 	},
-	transaction_validity::{TransactionSource, TransactionValidity},
+	transaction_validity::{
+		TransactionLongevity, TransactionPriority, TransactionSource, TransactionValidity,
+	},
 	ApplyExtrinsicResult, MultiSignature,
 };
 use sp_std::prelude::*;
@@ -38,6 +40,7 @@ pub use frame_support::{
 	},
 	StorageValue,
 };
+use frame_system::offchain::SendTransactionTypes;
 pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
@@ -135,6 +138,14 @@ pub fn native_version() -> NativeVersion {
 }
 
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
+
+impl<C> SendTransactionTypes<C> for Runtime
+where
+	RuntimeCall: From<C>,
+{
+	type Extrinsic = UncheckedExtrinsic;
+	type OverarchingCall = RuntimeCall;
+}
 
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 2400;
@@ -270,6 +281,9 @@ impl pallet_sudo::Config for Runtime {
 
 parameter_types! {
 	pub const NumberOfBlocksYearly: u32 = 5256000;
+	pub DefiOffchainWorkerTxPriority: TransactionPriority =
+		Perbill::from_percent(10) * TransactionPriority::max_value();
+	pub DefiOffchainWorkerTxLongevity: TransactionLongevity = 5;
 }
 
 // Configure the custom pallet (pallet-defi)
@@ -277,6 +291,8 @@ impl pallet_defi::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
 	type NumberOfBlocksYearly = NumberOfBlocksYearly;
+	type UnsignedPriority = DefiOffchainWorkerTxPriority;
+	type UnsignedLongevity = DefiOffchainWorkerTxLongevity;
 	type WeightInfo = pallet_defi::weights::SubstrateWeight<Runtime>;
 }
 

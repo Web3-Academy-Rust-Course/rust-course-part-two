@@ -40,6 +40,7 @@ pub trait WeightInfo {
 	fn update_deposit_rate() -> Weight;
 	fn update_borrowing_rate() -> Weight;
 	fn update_collateral_factor() -> Weight;
+	fn liquidate_user_position() -> Weight;
 }
 
 /// Weight functions for `pallet_defi`.
@@ -53,10 +54,26 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `160`
 		//  Estimated: `6196`
-		// Minimum execution time: 65_876_000 picoseconds.
-		Weight::from_parts(67_771_000, 0)
+		// Minimum execution time: 66_367_000 picoseconds.
+		Weight::from_parts(67_721_000, 0)
 			.saturating_add(Weight::from_parts(0, 6196))
 			.saturating_add(T::DbWeight::get().reads(3))
+			.saturating_add(T::DbWeight::get().writes(3))
+	}
+	/// Storage: `Defi::Accounts` (r:1 w:1)
+	/// Proof: `Defi::Accounts` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Defi::DepositRate` (r:1 w:0)
+	/// Proof: `Defi::DepositRate` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `System::Account` (r:2 w:2)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
+	fn withdraw() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `310`
+		//  Estimated: `6196`
+		// Minimum execution time: 66_799_000 picoseconds.
+		Weight::from_parts(67_900_000, 0)
+			.saturating_add(Weight::from_parts(0, 6196))
+			.saturating_add(T::DbWeight::get().reads(4))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
 	/// Storage: `System::Account` (r:2 w:2)
@@ -65,52 +82,32 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `Defi::Accounts` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// Storage: `Defi::DepositRate` (r:1 w:0)
 	/// Proof: `Defi::DepositRate` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	fn withdraw() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `160`
-		//  Estimated: `6196`
-		// Minimum execution time: 120_382_000 picoseconds.
-		Weight::from_parts(122_125_000, 0)
-			.saturating_add(Weight::from_parts(0, 6196))
-			.saturating_add(T::DbWeight::get().reads(4))
-			.saturating_add(T::DbWeight::get().writes(3))
-	}
-	/// Storage: `System::Account` (r:3 w:3)
-	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
-	/// Storage: `Defi::Accounts` (r:2 w:2)
-	/// Proof: `Defi::Accounts` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	/// Storage: `Defi::DepositRate` (r:1 w:0)
-	/// Proof: `Defi::DepositRate` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// Storage: `Defi::CollateralFactor` (r:1 w:0)
 	/// Proof: `Defi::CollateralFactor` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	fn borrow() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `160`
-		//  Estimated: `8799`
-		// Minimum execution time: 175_057_000 picoseconds.
-		Weight::from_parts(178_213_000, 0)
-			.saturating_add(Weight::from_parts(0, 8799))
-			.saturating_add(T::DbWeight::get().reads(7))
-			.saturating_add(T::DbWeight::get().writes(5))
+		//  Measured:  `348`
+		//  Estimated: `6196`
+		// Minimum execution time: 70_456_000 picoseconds.
+		Weight::from_parts(71_819_000, 0)
+			.saturating_add(Weight::from_parts(0, 6196))
+			.saturating_add(T::DbWeight::get().reads(5))
+			.saturating_add(T::DbWeight::get().writes(3))
 	}
 	/// Storage: `System::Account` (r:2 w:2)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
-	/// Storage: `Defi::Accounts` (r:2 w:1)
+	/// Storage: `Defi::Accounts` (r:1 w:1)
 	/// Proof: `Defi::Accounts` (`max_values`: None, `max_size`: None, mode: `Measured`)
-	/// Storage: `Defi::DepositRate` (r:1 w:0)
-	/// Proof: `Defi::DepositRate` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
-	/// Storage: `Defi::CollateralFactor` (r:1 w:0)
-	/// Proof: `Defi::CollateralFactor` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// Storage: `Defi::BorrowingRate` (r:1 w:0)
 	/// Proof: `Defi::BorrowingRate` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	fn repay() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `273`
-		//  Estimated: `6213`
-		// Minimum execution time: 364_823_000 picoseconds.
-		Weight::from_parts(380_342_000, 0)
-			.saturating_add(Weight::from_parts(0, 6213))
-			.saturating_add(T::DbWeight::get().reads(7))
+		//  Measured:  `310`
+		//  Estimated: `6196`
+		// Minimum execution time: 66_387_000 picoseconds.
+		Weight::from_parts(67_440_000, 0)
+			.saturating_add(Weight::from_parts(0, 6196))
+			.saturating_add(T::DbWeight::get().reads(4))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
 	/// Storage: `Defi::AuthorityAccount` (r:1 w:0)
@@ -121,8 +118,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `6`
 		//  Estimated: `1491`
-		// Minimum execution time: 10_621_000 picoseconds.
-		Weight::from_parts(10_961_000, 0)
+		// Minimum execution time: 10_591_000 picoseconds.
+		Weight::from_parts(10_921_000, 0)
 			.saturating_add(Weight::from_parts(0, 1491))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -135,8 +132,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `6`
 		//  Estimated: `1491`
-		// Minimum execution time: 10_460_000 picoseconds.
-		Weight::from_parts(11_172_000, 0)
+		// Minimum execution time: 10_360_000 picoseconds.
+		Weight::from_parts(10_851_000, 0)
 			.saturating_add(Weight::from_parts(0, 1491))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
@@ -149,61 +146,86 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `6`
 		//  Estimated: `1491`
-		// Minimum execution time: 10_720_000 picoseconds.
-		Weight::from_parts(11_051_000, 0)
+		// Minimum execution time: 10_320_000 picoseconds.
+		Weight::from_parts(10_831_000, 0)
 			.saturating_add(Weight::from_parts(0, 1491))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
+	}
+	/// Storage: `Defi::Accounts` (r:1 w:1)
+	/// Proof: `Defi::Accounts` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Defi::DepositRate` (r:1 w:0)
+	/// Proof: `Defi::DepositRate` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Defi::BorrowingRate` (r:1 w:0)
+	/// Proof: `Defi::BorrowingRate` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `Defi::CollateralFactor` (r:1 w:0)
+	/// Proof: `Defi::CollateralFactor` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	fn liquidate_user_position() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `178`
+		//  Estimated: `3643`
+		// Minimum execution time: 30_489_000 picoseconds.
+		Weight::from_parts(32_252_000, 0)
+			.saturating_add(Weight::from_parts(0, 3643))
+			.saturating_add(RocksDbWeight::get().reads(4))
+			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 }
 
 impl WeightInfo for () {
 	fn deposit() -> Weight {
-		Weight::from_parts(67_771_000, 0)
+		Weight::from_parts(67_721_000, 0)
 			.saturating_add(Weight::from_parts(0, 6196))
 			.saturating_add(RocksDbWeight::get().reads(3))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}
 
 	fn withdraw() -> Weight {
-		Weight::from_parts(122_125_000, 0)
+		Weight::from_parts(67_900_000, 0)
 			.saturating_add(Weight::from_parts(0, 6196))
 			.saturating_add(RocksDbWeight::get().reads(4))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}
 
 	fn borrow() -> Weight {
-		Weight::from_parts(178_213_000, 0)
-			.saturating_add(Weight::from_parts(0, 8799))
-			.saturating_add(RocksDbWeight::get().reads(7))
-			.saturating_add(RocksDbWeight::get().writes(5))
+		Weight::from_parts(71_819_000, 0)
+			.saturating_add(Weight::from_parts(0, 6196))
+			.saturating_add(RocksDbWeight::get().reads(5))
+			.saturating_add(RocksDbWeight::get().writes(3))
 	}
 
 	fn repay() -> Weight {
-		Weight::from_parts(380_342_000, 0)
-			.saturating_add(Weight::from_parts(0, 6213))
-			.saturating_add(RocksDbWeight::get().reads(7))
+		Weight::from_parts(67_440_000, 0)
+			.saturating_add(Weight::from_parts(0, 6196))
+			.saturating_add(RocksDbWeight::get().reads(4))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}
 
 	fn update_deposit_rate() -> Weight {
-		Weight::from_parts(10_961_000, 0)
+		Weight::from_parts(10_921_000, 0)
 			.saturating_add(Weight::from_parts(0, 1491))
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 
 	fn update_borrowing_rate() -> Weight {
-		Weight::from_parts(11_172_000, 0)
+		Weight::from_parts(10_851_000, 0)
 			.saturating_add(Weight::from_parts(0, 1491))
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 
 	fn update_collateral_factor() -> Weight {
-		Weight::from_parts(11_051_000, 0)
+		Weight::from_parts(10_831_000, 0)
 			.saturating_add(Weight::from_parts(0, 1491))
 			.saturating_add(RocksDbWeight::get().reads(1))
+			.saturating_add(RocksDbWeight::get().writes(1))
+	}
+
+	fn liquidate_user_position() -> Weight {
+		Weight::from_parts(32_252_000, 0)
+			.saturating_add(Weight::from_parts(0, 3643))
+			.saturating_add(RocksDbWeight::get().reads(4))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 }

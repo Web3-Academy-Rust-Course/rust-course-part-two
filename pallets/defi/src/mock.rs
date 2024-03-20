@@ -2,13 +2,14 @@ use crate as pallet_defi;
 use codec::Decode;
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{Everything, Hooks},
+	traits::{ConstU64, Everything, Hooks},
 	PalletId,
 };
-use frame_system;
+use frame_system::{self, offchain::SendTransactionTypes};
 use hex_literal::hex;
 use sp_core::H256;
 use sp_runtime::{
+	testing::TestXt,
 	traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
 	BuildStorage, FixedU128,
 };
@@ -60,6 +61,16 @@ construct_runtime!(
 		Defi: pallet_defi,
 	}
 );
+
+pub type MockExtrinsic = TestXt<RuntimeCall, ()>;
+
+impl<LocalCall> SendTransactionTypes<LocalCall> for Runtime
+where
+	RuntimeCall: From<LocalCall>,
+{
+	type Extrinsic = MockExtrinsic;
+	type OverarchingCall = RuntimeCall;
+}
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
@@ -119,6 +130,8 @@ impl pallet_defi::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
 	type NumberOfBlocksYearly = NumberOfBlocksYearly;
+	type UnsignedPriority = ConstU64<100>;
+	type UnsignedLongevity = ConstU64<100>;
 	type WeightInfo = ();
 }
 

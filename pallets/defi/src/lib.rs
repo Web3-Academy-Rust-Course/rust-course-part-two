@@ -32,22 +32,27 @@ pub mod pallet {
 	use super::*;
 	use crate::WeightInfo;
 	use frame_support::{
+		log::{info, warn},
 		pallet_prelude::*,
 		sp_runtime::{
 			traits::{AccountIdConversion, One, Zero},
 			FixedU128, SaturatedConversion, Saturating,
 		},
+		sp_std::if_std,
 		traits::{Currency, ExistenceRequirement, ReservableCurrency},
 		transactional, PalletId,
 	};
-	use frame_system::pallet_prelude::*;
+	use frame_system::{
+		offchain::{SendTransactionTypes, SubmitTransaction},
+		pallet_prelude::*,
+	};
 	use hex_literal::hex;
 
 	const PALLET_ID: PalletId = PalletId(*b"defipllt");
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
+	pub trait Config: frame_system::Config + SendTransactionTypes<Call<Self>> {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
@@ -56,6 +61,14 @@ pub mod pallet {
 
 		/// Number of blocks on yearly basis
 		type NumberOfBlocksYearly: Get<u32>;
+
+		/// A configuration for base priority of unsigned transactions.
+		#[pallet::constant]
+		type UnsignedPriority: Get<TransactionPriority>;
+
+		/// A configuration for longevity of unsigned transactions.
+		#[pallet::constant]
+		type UnsignedLongevity: Get<u64>;
 
 		/// Extrinsics weight Info
 		type WeightInfo: WeightInfo;
@@ -454,6 +467,30 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		/// Liquidate user position
+		#[transactional]
+		#[pallet::call_index(7)]
+		#[pallet::weight(<T as Config>::WeightInfo::liquidate_user_position())]
+		pub fn liquidate_user_position(
+			_origin: OriginFor<T>,
+			user: AccountIdOf<T>,
+		) -> DispatchResult {
+			let collateral = FixedU128::from_inner(
+				Self::get_lending_amount(user.clone()).saturated_into::<u128>(),
+			);
+			let borrowed =
+				FixedU128::from_inner(Self::get_debt_amount(user.clone()).saturated_into::<u128>());
+			let collateralized_balance = collateral.saturating_mul(CollateralFactor::<T>::get());
+
+			if borrowed > collateralized_balance {
+				Accounts::<T>::remove(&user);
+
+				Self::deposit_event(Event::AddressLiquidated(user));
+			}
+
+			Ok(())
+		}
 	}
 
 	impl<T: Config> Pallet<T> {
@@ -573,10 +610,36 @@ pub mod pallet {
 		fn account_id() -> T::AccountId {
 			PALLET_ID.into_account_truncating()
 		}
+	}
 
-		/// Hook functions that is called on each initialized block
-		fn check_liquidity(_current_block: BlockNumber<T>) -> Weight {
-			let mut counter: u64 = 0;
+	/// Validate unsigned call to the pallet
+	#[pallet::validate_unsigned]
+	impl<T: Config> ValidateUnsigned for Pallet<T> {
+		type Call = Call<T>;
+
+		// It is allowed to call only liquidate_user_position() and only if it fulfills all of the
+		// extrinsics conditions
+		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+			match call {
+				Call::liquidate_user_position { user } =>
+					ValidTransaction::with_tag_prefix("Defi::liquidate_user_position")
+						.priority(T::UnsignedPriority::get())
+						.longevity(T::UnsignedLongevity::get())
+						.and_provides([user])
+						.propagate(true)
+						.build(),
+				_ => {
+					warn!("Unknown unsigned call {:?}", call);
+					InvalidTransaction::Call.into()
+				},
+			}
+		}
+	}
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn offchain_worker(_now: BlockNumber<T>) {
+			info!("👷 Offchain worker: Checking user position liquidity...");
 
 			for address in Accounts::<T>::iter() {
 				let collateral = FixedU128::from_inner(
@@ -589,26 +652,22 @@ pub mod pallet {
 					collateral.saturating_mul(CollateralFactor::<T>::get());
 
 				if borrowed >= collateralized_balance {
-					Accounts::<T>::remove(&address.0);
+					let call = Call::<T>::liquidate_user_position { user: address.0.clone() };
 
-					Self::deposit_event(Event::AddressLiquidated(address.0));
-
-					counter += 1;
+					if let Err(err) =
+						SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into())
+					{
+						if_std! {
+							println!("error");
+						}
+						warn!(
+                            "👷 Offchain worker: Failed to liquidate user position.🚧 Error: {:?}", err
+                        );
+					} else {
+						info!("👷 Offchain worker: Liquidating a user");
+					}
 				}
 			}
-
-			T::DbWeight::get()
-				.reads(counter)
-				.saturating_add(T::DbWeight::get().writes(counter))
-		}
-	}
-
-	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_initialize(now: BlockNumber<T>) -> Weight {
-			let consumed_weight = Self::check_liquidity(now);
-
-			consumed_weight
 		}
 	}
 }
