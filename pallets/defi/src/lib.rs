@@ -14,6 +14,8 @@ mod benchmarking;
 pub mod weights;
 pub use weights::WeightInfo;
 
+pub mod migrations;
+
 #[derive(Encode, Decode, Default, PartialEq, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct AddressInfo<Balance, BlockNumber> {
@@ -25,12 +27,24 @@ pub struct AddressInfo<Balance, BlockNumber> {
 	borrow_principal: Balance,
 	/// The time (block height) at which the borrowing balance was last adjusted
 	borrow_date: BlockNumber,
+	/// The time (block height) at which the user has initially interacted with the pallet
+	created_at: BlockNumber,
+}
+
+/// Storage version.
+#[derive(Encode, Decode, Eq, PartialEq, scale_info::TypeInfo, Clone)]
+#[cfg_attr(feature = "std", derive(Debug))]
+pub enum StorageVersion {
+	/// Initial version
+	V1,
+	/// Version after migrating to new AddressInfo version
+	V2,
 }
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
 	use super::*;
-	use crate::WeightInfo;
+	use crate::{StorageVersion, WeightInfo};
 	use frame_support::{
 		pallet_prelude::*,
 		sp_runtime::{
@@ -62,8 +76,8 @@ pub mod pallet {
 	}
 
 	type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
-	type BalanceOf<T> = <<T as Config>::Currency as Currency<AccountIdOf<T>>>::Balance;
-	type BlockNumber<T> = BlockNumberFor<T>;
+	pub type BalanceOf<T> = <<T as Config>::Currency as Currency<AccountIdOf<T>>>::Balance;
+	pub type BlockNumber<T> = BlockNumberFor<T>;
 
 	#[pallet::pallet]
 	#[pallet::without_storage_info]
@@ -92,6 +106,12 @@ pub mod pallet {
 	#[pallet::type_value]
 	pub fn DefaultCollateralFactor<T: Config>() -> FixedU128 {
 		FixedU128::from_inner(75) / FixedU128::from_inner(100)
+	}
+
+	// Pallet storage version default value
+	#[pallet::type_value]
+	pub fn DefaultPalletStorageVersion<T: Config>() -> StorageVersion {
+		StorageVersion::V1
 	}
 
 	#[pallet::storage]
@@ -123,6 +143,11 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
+	#[pallet::storage]
+	#[pallet::getter(fn pallet_storage_version)]
+	pub type PalletStorageVersion<T: Config> =
+		StorageValue<_, StorageVersion, ValueQuery, DefaultPalletStorageVersion<T>>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -142,6 +167,8 @@ pub mod pallet {
 		BorrowingRateUpdated(FixedU128),
 		/// Collateral factor updated [factor]
 		CollateralFactorUpdated(FixedU128),
+		/// Pallet storage version has been updated
+		PalletStorageVersionUpdated(StorageVersion),
 	}
 
 	#[pallet::error]
@@ -589,8 +616,14 @@ pub mod pallet {
 					collateral.saturating_mul(CollateralFactor::<T>::get());
 
 				if borrowed >= collateralized_balance {
-					Accounts::<T>::remove(&address.0);
+					let mut address_info = Accounts::<T>::get(&address.0);
 
+					address_info.deposit_principal = BalanceOf::<T>::zero();
+					address_info.deposit_date = BlockNumber::<T>::zero();
+					address_info.borrow_principal = BalanceOf::<T>::zero();
+					address_info.borrow_date = BlockNumber::<T>::zero();
+
+					Accounts::<T>::insert(&address.0, address_info);
 					Self::deposit_event(Event::AddressLiquidated(address.0));
 
 					counter += 1;
@@ -609,6 +642,19 @@ pub mod pallet {
 			let consumed_weight = Self::check_liquidity(now);
 
 			consumed_weight
+		}
+
+		fn on_runtime_upgrade() -> Weight {
+			if Self::pallet_storage_version() == StorageVersion::V1 {
+				let weight = migrations::migrate::<T>();
+
+				PalletStorageVersion::<T>::put(StorageVersion::V2);
+				Self::deposit_event(Event::PalletStorageVersionUpdated(StorageVersion::V2));
+
+				weight
+			} else {
+				Weight::zero()
+			}
 		}
 	}
 }
