@@ -1,0 +1,19 @@
+{
+    "name": "backend",
+    "version": "1.0.0",
+    "author": "Nikola Petrovic - nikola@ceresblockchain.solutions",
+    "license": "MIT",
+    "dependencies": {
+        "@polkadot/api": "^10.12.4",
+        "dotenv": "^16.4.5",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.4.2"
+    },
+    "scripts": {
+        "getAccounts": "ts-node src/getAccounts.ts",
+        "deposit": "ts-node src/deposit.ts",
+        "borrow": "ts-node src/borrow.ts",
+        "updateBorrowingRate": "ts-node src/updateBorrowingRate.ts",
+        "trackPalletEvents": "ts-node src/trackPalletEvents.ts"
+    }
+}
